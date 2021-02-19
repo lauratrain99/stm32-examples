@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +69,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	//uint8_t message[] = "hello world\r\n";
 	int16_t AccData[3], GyroData[3], MagData[3];
-	MPU9250_GetData(AccData, GyroData, MagData);
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -97,20 +98,35 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint8_t ref = whoAmI();
+  char kk[155];
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
-	  //HAL_UART_Transmit(&huart2, message, strlen(message), 1000);
-	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
-	  //HAL_Delay(1);
 
-	  printf("%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d\n",
+	  MPU9250_GetData(AccData, GyroData, MagData);
+	  ref=sprintf(kk,"%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d\n\r",
 	    (int16_t)AccData[0], (int16_t)AccData[1], (int16_t)AccData[2],
 	    (int16_t)GyroData[0], (int16_t)GyroData[1], (int16_t)GyroData[2],
 	    (int16_t)MagData[0], (int16_t)MagData[1], (int16_t)MagData[2]);
+	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
+
+	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
+	  //HAL_Delay(1);
+
+	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
+	  HAL_UART_Transmit(&huart2, &kk, ref, 1000);
+	  //
+
+	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
+	  HAL_Delay(1000);
+
+
+
+
+
 
   }
   /* USER CODE END 3 */

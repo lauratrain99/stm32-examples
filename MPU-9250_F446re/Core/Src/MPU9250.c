@@ -193,7 +193,7 @@ void readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest)
 }
 
 /* gets the MPU9250 WHO_AM_I register value, expected to be 0x71 */
-static uint8_t whoAmI(){
+uint8_t whoAmI(){
 	// read the WHO AM I register
 	readRegisters(WHO_AM_I,1,_buffer);
 
@@ -202,7 +202,7 @@ static uint8_t whoAmI(){
 }
 
 /* gets the AK8963 WHO_AM_I register value, expected to be 0x48 */
-static int whoAmIAK8963(){
+int whoAmIAK8963(){
 	// read the WHO AM I register
 	readAK8963Registers(AK8963_WHO_AM_I,1,_buffer);
 	// return the register value

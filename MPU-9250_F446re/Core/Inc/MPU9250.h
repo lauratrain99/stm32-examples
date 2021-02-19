@@ -1,7 +1,7 @@
 /*
  * MPU925.h
  *
- *  Created on: 23 мая 2018 г.
+ *  Created on: 23 пїЅпїЅпїЅ 2018 пїЅ.
  *      Author: Max
  */
 
@@ -49,8 +49,13 @@ typedef enum SampleRateDivider_ {
 	LP_ACCEL_ODR_500HZ
 } SampleRateDivider;
 
+
+/* call whoAmI*/
+uint8_t whoAmI();
+int whoAmIAK8963();
+
 uint8_t MPU9250_Init();
-/* read the data, each argiment should point to a array for x, y, and x */
+/* read the data, each argument should point to a array for x, y, and x */
 void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData);
 
 /* sets the sample rate divider to values other than default */
@@ -61,6 +66,7 @@ void MPU9250_SetDLPFBandwidth(DLPFBandwidth bandwidth);
 void MPU9250_SetGyroRange(GyroRange range);
 /* sets the accelerometer full scale range to values other than default */
 void MPU9250_SetAccelRange(AccelRange range);
+
 
 #endif /* MPU925_H_ */
 
