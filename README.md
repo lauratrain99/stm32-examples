@@ -7,3 +7,5 @@ Added examples:
 - Blink a LED with the board F446RE
 - Trigger a LED with a push button with the board F446RE
 - Trigger a LED when receiving input from a LDR with the board F446RE
+- Send a Hello World message to the serial monitor with the board F446RE
+- Read the MPU-92500 IMU sensor by SPI and display the values in the serial monitor with the board F446RE
