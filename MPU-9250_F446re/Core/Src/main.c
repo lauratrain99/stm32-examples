@@ -106,11 +106,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  MPU9250_GetData(AccData, GyroData, MagData);
+	  MPU9250_GetData(AccData, MagData,  GyroData);
 	  ref=sprintf(kk,"%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d;%08d\n\r",
 	    (int16_t)AccData[0], (int16_t)AccData[1], (int16_t)AccData[2],
 	    (int16_t)GyroData[0], (int16_t)GyroData[1], (int16_t)GyroData[2],
 	    (int16_t)MagData[0], (int16_t)MagData[1], (int16_t)MagData[2]);
+
 	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
 
 	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);

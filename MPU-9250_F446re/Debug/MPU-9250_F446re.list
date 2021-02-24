@@ -566,7 +566,7 @@ uint8_t whoAmI(){
 	writeRegister(SMPDIV, srd);
 }
 
-/* read the data, each argiment should point to a array for x, y, and x */
+/* read the data, each argument should point to a array for x, y, and x */
 void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
 {
  8000684:	b580      	push	{r7, lr}
@@ -576,12 +576,15 @@ void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
  800068c:	60b9      	str	r1, [r7, #8]
  800068e:	607a      	str	r2, [r7, #4]
 	// grab the data from the MPU9250
-	readRegisters(ACCEL_OUT, 21, _buffer);
- 8000690:	233b      	movs	r3, #59	; 0x3b
+	//readRegisters(ACCEL_OUT, 21, _buffer);
+	readRegisters(GYRO_OUT, 21, _buffer);
+ 8000690:	2343      	movs	r3, #67	; 0x43
  8000692:	4a63      	ldr	r2, [pc, #396]	; (8000820 <MPU9250_GetData+0x19c>)
  8000694:	2115      	movs	r1, #21
  8000696:	4618      	mov	r0, r3
  8000698:	f7ff ffd2 	bl	8000640 <readRegisters>
+
+
 
 	// combine into 16 bit values
 	AccData[0] = (((int16_t)_buffer[0]) << 8) | _buffer[1];
@@ -937,9 +940,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  MPU9250_GetData(AccData, GyroData, MagData);
- 8000936:	f107 02a0 	add.w	r2, r7, #160	; 0xa0
- 800093a:	f107 01a8 	add.w	r1, r7, #168	; 0xa8
+	  MPU9250_GetData(AccData, MagData,  GyroData);
+ 8000936:	f107 02a8 	add.w	r2, r7, #168	; 0xa8
+ 800093a:	f107 01a0 	add.w	r1, r7, #160	; 0xa0
  800093e:	f107 03b0 	add.w	r3, r7, #176	; 0xb0
  8000942:	4618      	mov	r0, r3
  8000944:	f7ff fe9e 	bl	8000684 <MPU9250_GetData>

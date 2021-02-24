@@ -244,7 +244,7 @@ uint8_t MPU9250_Init()
 	writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
 
 	// setting the gyro range to 2000DPS as default
-	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS);
+	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS);
 
 	// setting bandwidth to 184Hz as default
 	writeRegister(ACCEL_CONFIG2,DLPF_184);
@@ -366,11 +366,14 @@ void MPU9250_SetSampleRateDivider(SampleRateDivider srd)
 	writeRegister(SMPDIV, srd);
 }
 
-/* read the data, each argiment should point to a array for x, y, and x */
+/* read the data, each argument should point to a array for x, y, and x */
 void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
 {
 	// grab the data from the MPU9250
-	readRegisters(ACCEL_OUT, 21, _buffer);
+	//readRegisters(ACCEL_OUT, 21, _buffer);
+	//readRegisters(GYRO_OUT, 21, _buffer);
+
+
 
 	// combine into 16 bit values
 	AccData[0] = (((int16_t)_buffer[0]) << 8) | _buffer[1];
