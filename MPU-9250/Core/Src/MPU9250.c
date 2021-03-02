@@ -160,7 +160,7 @@ uint8_t MPU9250_Init()
 	writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
 
 	// setting the gyro range to 2000DPS as default
-	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS);
+	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS);
 
 	// setting bandwidth to 184Hz as default
 	writeRegister(ACCEL_CONFIG2,DLPF_184);
@@ -226,10 +226,21 @@ void MPU9250_SetAccelRange(AccelRange range)
 	writeRegister(ACCEL_CONFIG, range);
 }
 
+
 /* sets the gyro full scale range to values other than default */
 void MPU9250_SetGyroRange(GyroRange range)
 {
 	writeRegister(GYRO_CONFIG, range);
+
+	/*unsigned int temp_range;
+
+    switch (range){
+        case GYRO_FS_SEL_250DPS:   gyro_divider = 131;  break;
+        case GYRO_FS_SEL_500DPS:   gyro_divider = 65.5; break;
+        case GYRO_FS_SEL_1000DPS:  gyro_divider = 32.8; break;
+        case GYRO_FS_SEL_2000DPS:  gyro_divider = 16.4; break;
+    }*/
+
 }
 
 /* sets the DLPF bandwidth to values other than default */
@@ -282,17 +293,21 @@ void MPU9250_SetSampleRateDivider(SampleRateDivider srd)
 	writeRegister(SMPDIV, srd);
 }
 
+
+
+unsigned int SetGyroScale(int range){
+
+}
+
 /* read the data, each argument should point to a array for x, y, and x */
-void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
+void MPU9250_GetData(int16_t* AccData, int16_t* GyroData, int16_t* MagData)
 {
 	// grab the data from the MPU9250
 	readRegisters(ACCEL_OUT, 21, _buffer);
-	//readRegisters(GYRO_OUT, 21, _buffer);
-
 
 
 	// combine into 16 bit values
-	AccData[0] = ((int16_t)_buffer[0]) << 8) | _buffer[1];
+	AccData[0] = (((int16_t)_buffer[0]) << 8) | _buffer[1];
 	AccData[1] = (((int16_t)_buffer[2]) << 8) | _buffer[3];
 	AccData[2] = (((int16_t)_buffer[4]) << 8) | _buffer[5];
 	GyroData[0] = (((int16_t)_buffer[8]) << 8) | _buffer[9];
@@ -303,7 +318,9 @@ void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
 	int16_t magy = (((int16_t)_buffer[17]) << 8) | _buffer[16];
 	int16_t magz = (((int16_t)_buffer[19]) << 8) | _buffer[18];
 
-	MagData[0] = ((float)magx * ((float)(_mag_adjust[0] - 128) / 256.0f + 1.0f));
-	MagData[1] = ((float)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
-	MagData[2] = ((float)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
+	MagData[0] = (int16_t)((float)magx * ((float)(_mag_adjust[0] - 128) / 256.0f + 1.0f));
+	MagData[1] = (int16_t)((float)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
+	MagData[2] = (int16_t)((float)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
+
+
 }
