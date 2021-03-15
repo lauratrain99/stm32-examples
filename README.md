@@ -9,3 +9,4 @@ Added examples:
 - Trigger a LED when receiving input from a LDR with the board F446RE
 - Send a Hello World message to the serial monitor with the board F446RE
 - Read the MPU-9250 IMU sensor by SPI and display the values in the serial monitor with the board F446RE
+- Perform matrix operations using DSP  with the board F446RE
