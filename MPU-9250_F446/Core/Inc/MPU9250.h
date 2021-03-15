@@ -13,6 +13,7 @@
 
 
 const uint8_t READWRITE_CMD = 0x80;
+
 const uint8_t MULTIPLEBYTE_CMD = 0x40;
 const uint8_t DUMMY_BYTE = 0x00;
 
@@ -162,7 +163,7 @@ int whoAmIAK8963();
 
 uint8_t MPU9250_Init();
 /* read the data, each argument should point to a array for x, y, and x */
-void MPU9250_GetData(int16_t* AccData, int16_t* GyroData, int16_t* MagData);
+void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[]);
 
 /* sets the sample rate divider to values other than default */
 void MPU9250_SetSampleRateDivider(SampleRateDivider srd);

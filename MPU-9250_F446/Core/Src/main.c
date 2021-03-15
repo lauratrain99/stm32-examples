@@ -46,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+//uint8_t _buffer[21];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,7 +68,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	//uint8_t message[] = "hello world\r\n";
-	uint16_t AccData[3], GyroData[3], MagData[3];
+  int16_t AccData[3] = {0, 0, 0} , GyroData[3] = {0, 0, 0}, MagData[3] = {0, 0, 0};
 
   /* USER CODE END 1 */
 
@@ -98,8 +98,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t ref = whoAmI();
+  uint16_t ref = whoAmI();
   char kk[255];
+
+  MPU9250_Init();
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -107,10 +110,29 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  MPU9250_GetData(AccData, GyroData,  MagData);
-	  ref = sprintf(kk," ax = %.3f g's \r\n ay = %.3f g's \r\n az = %.3f g's \r\n wx = %.3f deg/s \r\n wy = %.3f deg/s \r\n wz = %.3f deg/s \r\n mx = %.3f µT \r\n my = %.3f µT \r\n mz = %.3f µT \r\n------------------ \r\n\n",
-	    (float)AccData[0], (float)AccData[1], (float)AccData[2],
-	    (float)GyroData[0], (float)GyroData[1], (float)GyroData[2],
-	    (float)MagData[0], (float)MagData[1], (float)MagData[2]);
+	  /*HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+	  uint8_t data = 0x3B | 0x80;
+	  HAL_SPI_Transmit(&hspi2, &data, 1, 100);
+	  HAL_SPI_Receive(&hspi2, _buffer, 21, 100);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
+
+	  AccData[0] = (((int16_t)_buffer[0]) << 8) | _buffer[1];
+	  AccData[1] = (((int16_t)_buffer[2]) << 8) | _buffer[3];
+	  AccData[2] = (((int16_t)_buffer[4]) << 8) | _buffer[5];
+
+	  GyroData[0] = (((int16_t)_buffer[8]) << 8) | _buffer[9];
+	  GyroData[1] = (((int16_t)_buffer[10]) << 8) | _buffer[11];
+	  GyroData[2] = (((int16_t)_buffer[12]) << 8) | _buffer[13];
+
+	  MagData[0] = (((int16_t)_buffer[15]) << 8) | _buffer[14];
+	  MagData[1] = (((int16_t)_buffer[17]) << 8) | _buffer[16];
+	  MagData[2] = (((int16_t)_buffer[19]) << 8) | _buffer[18];*/
+
+	  ref = sprintf(kk," ax = %.3f g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
+	    (float)AccData[0]/4096.0, (float)AccData[1]/4096.0, (float)AccData[2]/4096.0,
+		(float)GyroData[0]/16.4, (float)GyroData[1]/16.4, (float)GyroData[2]/16.4,
+		(float)MagData[0]*0.6, (float)MagData[1]*0.6, (float)MagData[2]*0.6);
 
 	  //HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
 
@@ -119,12 +141,9 @@ int main(void)
 
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
 	  HAL_UART_Transmit(&huart2, kk, ref, 1000);
-	  //
 
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
 	  HAL_Delay(1000);
-
-
 
 
 

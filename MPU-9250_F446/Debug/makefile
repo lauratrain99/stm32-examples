@@ -46,8 +46,8 @@ MPU-9250.bin \
 all: MPU-9250.elf secondary-outputs
 
 # Tool invocations
-MPU-9250.elf: $(OBJS) $(USER_OBJS) C:\ST\STM32CubeIDE_1.4.0\STM32CubeIDE\stm32-examples\MPU-9250\STM32F446RETX_FLASH.ld
-	arm-none-eabi-gcc -o "MPU-9250.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ST\STM32CubeIDE_1.4.0\STM32CubeIDE\stm32-examples\MPU-9250\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MPU-9250.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+MPU-9250.elf: $(OBJS) $(USER_OBJS) C:\Users\Laura\STM32CubeIDE\workspace_1.4.0\first_try\MPU-9250\STM32F446RETX_FLASH.ld
+	arm-none-eabi-gcc -o "MPU-9250.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Laura\STM32CubeIDE\workspace_1.4.0\first_try\MPU-9250\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MPU-9250.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
