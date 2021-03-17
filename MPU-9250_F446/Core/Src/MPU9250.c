@@ -10,18 +10,17 @@
 
 
 
-
 __weak void MPU9250_OnActivate()
 {
 }
 
-static inline void MPU9250_Activate()
+void MPU9250_Activate()
 {
 	MPU9250_OnActivate();
 	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_CS_PIN, GPIO_PIN_RESET);
 }
 
-static inline void MPU9250_Deactivate()
+void MPU9250_Deactivate()
 {
 	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_CS_PIN, GPIO_PIN_SET);
 }
@@ -128,6 +127,8 @@ int whoAmIAK8963(){
 /* starts communication with the MPU-9250 */
 uint8_t MPU9250_Init()
 {
+	MPU9250_Activate();
+
 	// select clock source to gyro
 	writeRegister(PWR_MGMNT_1, CLOCK_SEL_PLL);
 	// enable I2C master mode
@@ -157,7 +158,7 @@ uint8_t MPU9250_Init()
 	writeRegister(PWR_MGMNT_2,SEN_ENABLE);
 
 	// setting accel range to 16G as default
-	writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_8G);
+	writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
 
 	// setting the gyro range to 2000DPS as default
 	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS);
@@ -217,8 +218,11 @@ uint8_t MPU9250_Init()
 	readAK8963Registers(AK8963_HXL,7,_buffer);
 
 	// successful init, return 0
+
+	MPU9250_Deactivate();
 	return 0;
 }
+
 
 /* sets the accelerometer full scale range to values other than default */
 void MPU9250_SetAccelRange(AccelRange range)
@@ -244,8 +248,7 @@ void MPU9250_SetDLPFBandwidth(DLPFBandwidth bandwidth)
 }
 
 /* sets the sample rate divider to values other than default */
-void MPU9250_SetSampleRateDivider(SampleRateDivider srd)
-{
+void MPU9250_SetSampleRateDivider(SampleRateDivider srd){
 	/* setting the sample rate divider to 19 to facilitate setting up magnetometer */
 	writeRegister(SMPDIV,19);
 
@@ -288,9 +291,12 @@ void MPU9250_SetSampleRateDivider(SampleRateDivider srd)
 
 
 
+
 /* read the data, each argument should point to a array for x, y, and x */
 void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[])
 {
+	MPU9250_Activate();
+
 	// grab the data from the MPU9250
 	readRegisters(ACCEL_OUT, 21, _buffer);
 
@@ -314,6 +320,524 @@ void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[])
 	MagData[2] = ((int16_t)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
 
 
-
+	MPU9250_Deactivate();
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+__weak void MPU9250_2_OnActivate()
+{
+}
+
+void MPU9250_2_Activate()
+{
+	MPU9250_OnActivate();
+	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_2_CS_PIN, GPIO_PIN_RESET);
+}
+
+void MPU9250_2_Deactivate()
+{
+	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_2_CS_PIN, GPIO_PIN_SET);
+}
+
+uint8_t SPIx_2_WriteRead(uint8_t Byte)
+{
+	uint8_t receivedbyte = 0;
+	if(HAL_SPI_TransmitReceive(&MPU9250_SPI,(uint8_t*) &Byte,(uint8_t*) &receivedbyte,1,0x1000)!=HAL_OK)
+	{
+		return -1;
+	}
+	else
+	{
+	}
+	return receivedbyte;
+}
+
+void MPU_2_SPI_Write (uint8_t *pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite)
+{
+	MPU9250_2_Activate();
+	SPIx_2_WriteRead(WriteAddr);
+	while(NumByteToWrite>=0x01)
+	{
+		SPIx_WriteRead(*pBuffer);
+		NumByteToWrite--;
+		pBuffer++;
+	}
+	MPU9250_2_Deactivate();
+}
+
+void MPU_2_SPI_Read(uint8_t *pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead)
+{
+	MPU9250_2_Activate();
+	uint8_t data = ReadAddr | READWRITE_CMD;
+	HAL_SPI_Transmit(&MPU9250_SPI, &data, 1, HAL_MAX_DELAY);
+	HAL_SPI_Receive(&MPU9250_SPI, pBuffer, NumByteToRead, HAL_MAX_DELAY);
+	MPU9250_2_Deactivate();
+}
+
+/* writes a byte to MPU9250 register given a register address and data */
+void writeRegister_2(uint8_t subAddress, uint8_t data)
+{
+	MPU_2_SPI_Write(&data, subAddress, 1);
+	HAL_Delay(10);
+}
+
+/* reads registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */
+void readRegisters_2(uint8_t subAddress, uint8_t count, uint8_t* dest){
+	MPU_2_SPI_Read(dest, subAddress, count);
+}
+
+/* writes a register to the AK8963 given a register address and data */
+void writeAK8963Register_2(uint8_t subAddress, uint8_t data)
+{
+	// set slave 0 to the AK8963 and set for write
+	writeRegister_2(I2C_SLV0_ADDR,AK8963_I2C_ADDR);
+
+	// set the register to the desired AK8963 sub address
+	writeRegister_2(I2C_SLV0_REG,subAddress);
+
+	// store the data for write
+	writeRegister_2(I2C_SLV0_DO,data);
+
+	// enable I2C and send 1 byte
+	writeRegister_2(I2C_SLV0_CTRL,I2C_SLV0_EN | (uint8_t)1);
+}
+
+/* reads registers from the AK8963 */
+void readAK8963Registers_2(uint8_t subAddress, uint8_t count, uint8_t* dest)
+{
+	// set slave 0 to the AK8963 and set for read
+	writeRegister_2(I2C_SLV0_ADDR, AK8963_I2C_ADDR | I2C_READ_FLAG);
+
+	// set the register to the desired AK8963 sub address
+	writeRegister_2(I2C_SLV0_REG,subAddress);
+
+	// enable I2C and request the bytes
+	writeRegister_2(I2C_SLV0_CTRL,I2C_SLV0_EN | count);
+
+	// takes some time for these registers to fill
+	HAL_Delay(1);
+
+	// read the bytes off the MPU9250 EXT_SENS_DATA registers
+	readRegisters_2(EXT_SENS_DATA_00,count,dest);
+}
+
+/* gets the MPU9250 WHO_AM_I register value, expected to be 0x71 */
+uint8_t whoAmI_2(){
+	// read the WHO AM I register
+	readRegisters_2(WHO_AM_I,1,_buffer_2);
+
+	// return the register value
+	return _buffer_2[0];
+}
+
+/* gets the AK8963 WHO_AM_I register value, expected to be 0x48 */
+int whoAmIAK8963_2(){
+	// read the WHO AM I register
+	readAK8963Registers_2(AK8963_WHO_AM_I,1,_buffer_2);
+	// return the register value
+	return _buffer_2[0];
+}
+
+/* starts communication with the MPU-9250 */
+uint8_t MPU9250_Init_2()
+{
+	MPU9250_2_Activate();
+
+	// select clock source to gyro
+	writeRegister_2(PWR_MGMNT_1, CLOCK_SEL_PLL);
+	// enable I2C master mode
+	writeRegister_2(USER_CTRL, I2C_MST_EN);
+	// set the I2C bus speed to 400 kHz
+	writeRegister_2(I2C_MST_CTRL, I2C_MST_CLK);
+
+	// set AK8963 to Power Down
+	writeAK8963Register_2(AK8963_CNTL1,AK8963_PWR_DOWN);
+	// reset the MPU9250
+	writeRegister_2(PWR_MGMNT_1,PWR_RESET);
+	// wait for MPU-9250 to come back up
+	HAL_Delay(10);
+	// reset the AK8963
+	writeAK8963Register_2(AK8963_CNTL2,AK8963_RESET);
+	// select clock source to gyro
+	writeRegister_2(PWR_MGMNT_1,CLOCK_SEL_PLL);
+
+	// check the WHO AM I byte, expected value is 0x71 (decimal 113) or 0x73 (decimal 115)
+	uint8_t who = whoAmI_2();
+	if((who != 0x71) &&( who != 0x73))
+	{
+		return 1;
+	}
+
+	// enable accelerometer and gyro
+	writeRegister_2(PWR_MGMNT_2,SEN_ENABLE);
+
+	// setting accel range to 16G as default
+	writeRegister_2(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
+
+	// setting the gyro range to 2000DPS as default
+	writeRegister_2(GYRO_CONFIG,GYRO_FS_SEL_2000DPS);
+
+	// setting bandwidth to 184Hz as default
+	writeRegister_2(ACCEL_CONFIG2,DLPF_184);
+
+	// setting gyro bandwidth to 184Hz
+	writeRegister_2(CONFIG,DLPF_184);
+
+	// setting the sample rate divider to 0 as default
+	writeRegister_2(SMPDIV,0x00);
+
+	// enable I2C master mode
+	writeRegister_2(USER_CTRL,I2C_MST_EN);
+
+	// set the I2C bus speed to 400 kHz
+	writeRegister_2(I2C_MST_CTRL,I2C_MST_CLK);
+
+	// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
+	if( whoAmIAK8963_2() != 0x48 )
+	{
+		return 1;
+	}
+
+	/* get the magnetometer calibration */
+	// set AK8963 to Power Down
+	writeAK8963Register_2(AK8963_CNTL1,AK8963_PWR_DOWN);
+
+	HAL_Delay(100); // long wait between AK8963 mode changes
+
+	// set AK8963 to FUSE ROM access
+	writeAK8963Register_2(AK8963_CNTL1,AK8963_FUSE_ROM);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// read the AK8963 ASA registers and compute magnetometer scale factors
+	readAK8963Registers_2(AK8963_ASA, 3, _mag_adjust);
+
+	// set AK8963 to Power Down
+	writeAK8963Register_2(AK8963_CNTL1,AK8963_PWR_DOWN);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// set AK8963 to 16 bit resolution, 100 Hz update rate
+	writeAK8963Register_2(AK8963_CNTL1,AK8963_CNT_MEAS2);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// select clock source to gyro
+	writeRegister_2(PWR_MGMNT_1,CLOCK_SEL_PLL);
+
+	// instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+	readAK8963Registers_2(AK8963_HXL,7,_buffer_2);
+
+	// successful init, return 0
+
+	MPU9250_2_Deactivate();
+
+	return 0;
+}
+
+
+/* read the data, each argument should point to a array for x, y, and x */
+void MPU9250_GetData_2(int16_t AccData[], int16_t GyroData[], int16_t MagData[])
+{
+	MPU9250_2_Activate();
+
+	// grab the data from the MPU9250
+	readRegisters_2(ACCEL_OUT, 21, _buffer_2);
+
+	int16_t magx, magy, magz;
+
+	// combine into 16 bit values
+	AccData[0] = (((int16_t)_buffer_2[0]) << 8) | _buffer_2[1];
+	AccData[1] = (((int16_t)_buffer_2[2]) << 8) | _buffer_2[3];
+	AccData[2] = (((int16_t)_buffer_2[4]) << 8) | _buffer_2[5];
+
+	GyroData[0] = (((int16_t)_buffer_2[8]) << 8) | _buffer_2[9];
+	GyroData[1] = (((int16_t)_buffer_2[10]) << 8) | _buffer_2[11];
+	GyroData[2] = (((int16_t)_buffer_2[12]) << 8) | _buffer_2[13];
+
+	magx = (((int16_t)_buffer_2[15]) << 8) | _buffer_2[14];
+	magy = (((int16_t)_buffer_2[17]) << 8) | _buffer_2[16];
+	magz = (((int16_t)_buffer_2[19]) << 8) | _buffer_2[18];
+
+	MagData[0] = ((int16_t)magx * ((float)(_mag_adjust[0] - 128) / 256.0f + 1.0f));
+	MagData[1] = ((int16_t)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
+	MagData[2] = ((int16_t)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
+
+
+	MPU9250_2_Deactivate();
+
+}
+
+
+
+
+
+
+
+
+
+__weak void MPU9250_3_OnActivate()
+{
+}
+
+void MPU9250_3_Activate()
+{
+	MPU9250_OnActivate();
+	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_3_CS_PIN, GPIO_PIN_RESET);
+}
+
+void MPU9250_3_Deactivate()
+{
+	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_3_CS_PIN, GPIO_PIN_SET);
+}
+
+uint8_t SPIx_3_WriteRead(uint8_t Byte)
+{
+	uint8_t receivedbyte = 0;
+	if(HAL_SPI_TransmitReceive(&MPU9250_SPI,(uint8_t*) &Byte,(uint8_t*) &receivedbyte,1,0x1000)!=HAL_OK)
+	{
+		return -1;
+	}
+	else
+	{
+	}
+	return receivedbyte;
+}
+
+void MPU_3_SPI_Write (uint8_t *pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite)
+{
+	MPU9250_3_Activate();
+	SPIx_3_WriteRead(WriteAddr);
+	while(NumByteToWrite>=0x01)
+	{
+		SPIx_WriteRead(*pBuffer);
+		NumByteToWrite--;
+		pBuffer++;
+	}
+	MPU9250_3_Deactivate();
+}
+
+void MPU_3_SPI_Read(uint8_t *pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead)
+{
+	MPU9250_3_Activate();
+	uint8_t data = ReadAddr | READWRITE_CMD;
+	HAL_SPI_Transmit(&MPU9250_SPI, &data, 1, HAL_MAX_DELAY);
+	HAL_SPI_Receive(&MPU9250_SPI, pBuffer, NumByteToRead, HAL_MAX_DELAY);
+	MPU9250_3_Deactivate();
+}
+
+/* writes a byte to MPU9250 register given a register address and data */
+void writeRegister_3(uint8_t subAddress, uint8_t data)
+{
+	MPU_3_SPI_Write(&data, subAddress, 1);
+	HAL_Delay(10);
+}
+
+/* reads registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */
+void readRegisters_3(uint8_t subAddress, uint8_t count, uint8_t* dest){
+	MPU_3_SPI_Read(dest, subAddress, count);
+}
+
+/* writes a register to the AK8963 given a register address and data */
+void writeAK8963Register_3(uint8_t subAddress, uint8_t data)
+{
+	// set slave 0 to the AK8963 and set for write
+	writeRegister_3(I2C_SLV0_ADDR,AK8963_I2C_ADDR);
+
+	// set the register to the desired AK8963 sub address
+	writeRegister_3(I2C_SLV0_REG,subAddress);
+
+	// store the data for write
+	writeRegister_3(I2C_SLV0_DO,data);
+
+	// enable I2C and send 1 byte
+	writeRegister_3(I2C_SLV0_CTRL,I2C_SLV0_EN | (uint8_t)1);
+}
+
+/* reads registers from the AK8963 */
+void readAK8963Registers_3(uint8_t subAddress, uint8_t count, uint8_t* dest)
+{
+	// set slave 0 to the AK8963 and set for read
+	writeRegister_3(I2C_SLV0_ADDR, AK8963_I2C_ADDR | I2C_READ_FLAG);
+
+	// set the register to the desired AK8963 sub address
+	writeRegister_3(I2C_SLV0_REG,subAddress);
+
+	// enable I2C and request the bytes
+	writeRegister_3(I2C_SLV0_CTRL,I2C_SLV0_EN | count);
+
+	// takes some time for these registers to fill
+	HAL_Delay(1);
+
+	// read the bytes off the MPU9250 EXT_SENS_DATA registers
+	readRegisters_3(EXT_SENS_DATA_00,count,dest);
+}
+
+/* gets the MPU9250 WHO_AM_I register value, expected to be 0x71 */
+uint8_t whoAmI_3(){
+	// read the WHO AM I register
+	readRegisters_3(WHO_AM_I,1,_buffer_3);
+
+	// return the register value
+	return _buffer_3[0];
+}
+
+/* gets the AK8963 WHO_AM_I register value, expected to be 0x48 */
+int whoAmIAK8963_3(){
+	// read the WHO AM I register
+	readAK8963Registers_3(AK8963_WHO_AM_I,1,_buffer_3);
+	// return the register value
+	return _buffer_3[0];
+}
+
+/* starts communication with the MPU-9250 */
+uint8_t MPU9250_Init_3()
+{
+	MPU9250_3_Activate();
+
+	// select clock source to gyro
+	writeRegister_3(PWR_MGMNT_1, CLOCK_SEL_PLL);
+	// enable I2C master mode
+	writeRegister_3(USER_CTRL, I2C_MST_EN);
+	// set the I2C bus speed to 400 kHz
+	writeRegister_3(I2C_MST_CTRL, I2C_MST_CLK);
+
+	// set AK8963 to Power Down
+	writeAK8963Register_3(AK8963_CNTL1,AK8963_PWR_DOWN);
+	// reset the MPU9250
+	writeRegister_3(PWR_MGMNT_1,PWR_RESET);
+	// wait for MPU-9250 to come back up
+	HAL_Delay(10);
+	// reset the AK8963
+	writeAK8963Register_3(AK8963_CNTL2,AK8963_RESET);
+	// select clock source to gyro
+	writeRegister_3(PWR_MGMNT_1,CLOCK_SEL_PLL);
+
+	// check the WHO AM I byte, expected value is 0x71 (decimal 113) or 0x73 (decimal 115)
+	uint8_t who = whoAmI_3();
+	if((who != 0x71) &&( who != 0x73))
+	{
+		return 1;
+	}
+
+	// enable accelerometer and gyro
+	writeRegister_3(PWR_MGMNT_2,SEN_ENABLE);
+
+	// setting accel range to 16G as default
+	writeRegister_3(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
+
+	// setting the gyro range to 2000DPS as default
+	writeRegister_3(GYRO_CONFIG,GYRO_FS_SEL_2000DPS);
+
+	// setting bandwidth to 184Hz as default
+	writeRegister_3(ACCEL_CONFIG2,DLPF_184);
+
+	// setting gyro bandwidth to 184Hz
+	writeRegister_3(CONFIG,DLPF_184);
+
+	// setting the sample rate divider to 0 as default
+	writeRegister_3(SMPDIV,0x00);
+
+	// enable I2C master mode
+	writeRegister_3(USER_CTRL,I2C_MST_EN);
+
+	// set the I2C bus speed to 400 kHz
+	writeRegister_3(I2C_MST_CTRL,I2C_MST_CLK);
+
+	// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
+	if( whoAmIAK8963_3() != 0x48 )
+	{
+		return 1;
+	}
+
+	/* get the magnetometer calibration */
+	// set AK8963 to Power Down
+	writeAK8963Register_3(AK8963_CNTL1,AK8963_PWR_DOWN);
+
+	HAL_Delay(100); // long wait between AK8963 mode changes
+
+	// set AK8963 to FUSE ROM access
+	writeAK8963Register_3(AK8963_CNTL1,AK8963_FUSE_ROM);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// read the AK8963 ASA registers and compute magnetometer scale factors
+	readAK8963Registers_3(AK8963_ASA, 3, _mag_adjust);
+
+	// set AK8963 to Power Down
+	writeAK8963Register_3(AK8963_CNTL1,AK8963_PWR_DOWN);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// set AK8963 to 16 bit resolution, 100 Hz update rate
+	writeAK8963Register_3(AK8963_CNTL1,AK8963_CNT_MEAS2);
+
+	// long wait between AK8963 mode changes
+	HAL_Delay(100);
+
+	// select clock source to gyro
+	writeRegister_3(PWR_MGMNT_1,CLOCK_SEL_PLL);
+
+	// instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+	readAK8963Registers_3(AK8963_HXL,7,_buffer_3);
+
+	// successful init, return 0
+
+	MPU9250_3_Deactivate();
+
+	return 0;
+}
+
+
+/* read the data, each argument should point to a array for x, y, and x */
+void MPU9250_GetData_3(int16_t AccData[], int16_t GyroData[], int16_t MagData[])
+{
+	MPU9250_3_Activate();
+
+	// grab the data from the MPU9250
+	readRegisters_3(ACCEL_OUT, 21, _buffer_3);
+
+	int16_t magx, magy, magz;
+
+	// combine into 16 bit values
+	AccData[0] = (((int16_t)_buffer_3[0]) << 8) | _buffer_3[1];
+	AccData[1] = (((int16_t)_buffer_3[2]) << 8) | _buffer_3[3];
+	AccData[2] = (((int16_t)_buffer_3[4]) << 8) | _buffer_3[5];
+
+	GyroData[0] = (((int16_t)_buffer_3[8]) << 8) | _buffer_3[9];
+	GyroData[1] = (((int16_t)_buffer_3[10]) << 8) | _buffer_3[11];
+	GyroData[2] = (((int16_t)_buffer_3[12]) << 8) | _buffer_3[13];
+
+	magx = (((int16_t)_buffer_3[15]) << 8) | _buffer_3[14];
+	magy = (((int16_t)_buffer_3[17]) << 8) | _buffer_3[16];
+	magz = (((int16_t)_buffer_3[19]) << 8) | _buffer_3[18];
+
+	MagData[0] = ((int16_t)magx * ((float)(_mag_adjust[0] - 128) / 256.0f + 1.0f));
+	MagData[1] = ((int16_t)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
+	MagData[2] = ((int16_t)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
+
+
+	MPU9250_3_Deactivate();
+
+}
+
+
+
+
+
