@@ -97,8 +97,6 @@ const uint8_t AK8963_WHO_AM_I = 0x00;
 
 
 static uint8_t _buffer[21];
-static uint8_t _buffer_2[21];
-static uint8_t _buffer_3[21];
 static uint8_t _mag_adjust[3];
 
 
@@ -156,25 +154,27 @@ typedef enum SampleRateDivider_ {
 	LP_ACCEL_ODR_500HZ
 } SampleRateDivider;
 
-void MPU9250_Activate();
-void MPU9250_Deactivate();
+
+void MPU9250_Activate(uint16_t MPU9250_CS_PIN);
+void MPU9250_Deactivate(uint16_t MPU9250_CS_PIN);
+
 /* call whoAmI*/
-uint8_t whoAmI();
-int whoAmIAK8963();
+uint8_t whoAmI(uint16_t MPU9250_CS_PIN);
+int whoAmIAK8963(uint16_t MPU9250_CS_PIN);
 
-uint8_t MPU9250_Init();
+uint8_t MPU9250_Init(uint16_t MPU9250_CS_PIN);
 /* read the data, each argument should point to a array for x, y, and x */
-void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[]);
+void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[], uint16_t MPU9250_CS_PIN);
 
-void MPU9250_2_Activate();
-void MPU9250_2_Deactivate();
-/* call whoAmI*/
-uint8_t whoAmI_2();
-int whoAmIAK8963_2();
-
-//uint8_t MPU9250_Init_2();
-/* read the data, each argument should point to a array for x, y, and x */
-void MPU9250_GetData_2(int16_t AccData[], int16_t GyroData[], int16_t MagData[]);
+//void MPU9250_2_Activate();
+//void MPU9250_2_Deactivate();
+///* call whoAmI*/
+//uint8_t whoAmI_2();
+//int whoAmIAK8963_2();
+//
+////uint8_t MPU9250_Init_2();
+///* read the data, each argument should point to a array for x, y, and x */
+//void MPU9250_GetData_2(int16_t AccData[], int16_t GyroData[], int16_t MagData[]);
 
 /* sets the sample rate divider to values other than default */
 //void MPU9250_SetSampleRateDivider(SampleRateDivider srd);

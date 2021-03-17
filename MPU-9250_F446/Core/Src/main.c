@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include "MPU9250_Config.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,15 +101,21 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  /* Buffers to store the print statements*/
   uint16_t ref = whoAmI();
   char kk[255];
-  char kk_2[255];
 
-  MPU9250_2_Deactivate();
-  MPU9250_3_Deactivate();
-  MPU9250_Init();
-  MPU9250_Init_2();
-  MPU9250_Init_3();
+  /* Lower CS for IMUs 2,3,4 */
+  MPU9250_Deactivate(MPU9250_2_CS_PIN);
+  MPU9250_Deactivate(MPU9250_3_CS_PIN);
+//  MPU9250_Deactivate(MPU9250_4_CS_PIN);
+
+  /*Initialize the four IMUs */
+  MPU9250_Init(MPU9250_1_CS_PIN);
+  MPU9250_Init(MPU9250_2_CS_PIN);
+  MPU9250_Init(MPU9250_3_CS_PIN);
+//  MPU9250_Init(MPU9250_4_CS_PIN);
 
 
   while (1)
@@ -116,9 +124,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  MPU9250_GetData(AccData, GyroData, MagData);
+	  /* Read IMU 1 */
+	  MPU9250_GetData(AccData, GyroData, MagData, MPU9250_1_CS_PIN);
 
-	  ref = sprintf(kk,"\t IMU 1 \r\n\n ax = %.3f g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
+	  ref = sprintf(kk,"\t IMU 1 \r\n\n ax = %.3f  g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
 	  		(float)AccData[0]/2048.0, (float)AccData[1]/2048.0, (float)AccData[2]/2048.0,
 	  		(float)GyroData[0]/16.4, (float)GyroData[1]/16.4, (float)GyroData[2]/16.4,
 	  		(float)MagData[0]*0.6, (float)MagData[1]*0.6, (float)MagData[2]*0.6);
@@ -131,24 +140,26 @@ int main(void)
 	  HAL_Delay(1000);
 
 
-	  MPU9250_GetData_2(AccData, GyroData, MagData);
+	  /* Read IMU 2 */
+	  MPU9250_GetData(AccData, GyroData, MagData, MPU9250_2_CS_PIN);
 
-	  ref = sprintf(kk_2,"\t IMU 2 \r\n\n ax = %.3f g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
+	  ref = sprintf(kk,"\t IMU 2 \r\n\n ax = %.3f  g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
 		(float)AccData[0]/2048.0, (float)AccData[1]/2048.0, (float)AccData[2]/2048.0,
 		(float)GyroData[0]/16.4, (float)GyroData[1]/16.4, (float)GyroData[2]/16.4,
 		(float)MagData[0]*0.6, (float)MagData[1]*0.6, (float)MagData[2]*0.6);
 
 
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
-	  HAL_UART_Transmit(&huart2, kk_2, ref, 1000);
+	  HAL_UART_Transmit(&huart2, kk, ref, 1000);
 
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
 	  HAL_Delay(1000);
 
 
-	  MPU9250_GetData_3(AccData, GyroData, MagData);
+	  /* Read IMU 3 */
+	  MPU9250_GetData(AccData, GyroData, MagData, MPU9250_3_CS_PIN);
 
-	  ref = sprintf(kk,"\t IMU 3 \r\n\n ax = %.3f g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
+	  ref = sprintf(kk,"\t IMU 3 \r\n\n ax = %.3f  g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
 			(float)AccData[0]/2048.0, (float)AccData[1]/2048.0, (float)AccData[2]/2048.0,
 			(float)GyroData[0]/16.4, (float)GyroData[1]/16.4, (float)GyroData[2]/16.4,
 			(float)MagData[0]*0.6, (float)MagData[1]*0.6, (float)MagData[2]*0.6);
@@ -159,6 +170,22 @@ int main(void)
 
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
 	  HAL_Delay(1000);
+
+
+	  /* Read IMU 4 */
+//	  MPU9250_GetData(AccData, GyroData, MagData, MPU9250_4_CS_PIN);
+//
+//	  ref = sprintf(kk,"\t IMU 4 \r\n\n ax = %.3f  g's \r\n ay = %.3f  g's \r\n az = %.3f  g's \r\n wx = %.3f  deg/s \r\n wy = %.3f  deg/s \r\n wz = %.3f  deg/s \r\n mx = %.3f  µT \r\n my = %.3f  µT \r\n mz = %.3f  µT \r\n------------------ \r\n\n",
+//			(float)AccData[0]/2048.0, (float)AccData[1]/2048.0, (float)AccData[2]/2048.0,
+//			(float)GyroData[0]/16.4, (float)GyroData[1]/16.4, (float)GyroData[2]/16.4,
+//			(float)MagData[0]*0.6, (float)MagData[1]*0.6, (float)MagData[2]*0.6);
+//
+//
+//	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
+//	  HAL_UART_Transmit(&huart2, kk, ref, 1000);
+//
+//	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_RESET);
+//	  HAL_Delay(1000);
 
 
   }
