@@ -69,7 +69,8 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	//uint8_t message[] = "hello world\r\n";
+
+  // Record accelerometer, gyro and magnetometer data
   int16_t AccData[3] = {0, 0, 0} , GyroData[3] = {0, 0, 0}, MagData[3] = {0, 0, 0};
 
   /* USER CODE END 1 */

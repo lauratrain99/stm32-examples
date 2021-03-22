@@ -1,26 +1,31 @@
 /*
  * MPU9250.c
  *
- *  Created on: Feb 28, 2019
- *      Author: Desert
+ *	MPU9250 driver for STM32 with HAL using SPI for multiple MPUs
+ *  Author: Laura Train, based on https://github.com/desertkun/MPU9250
+ *  Date of the last update: March 22 2021
+ *
  */
 
 #include "MPU9250.h"
 #include "spi.h"
 
 
-
-
+/* Activate chip select */
 void MPU9250_Activate(uint16_t MPU9250_CS_PIN)
 {
 	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_CS_PIN, GPIO_PIN_RESET);
 }
 
+
+/* Deactivate chip select */
 void MPU9250_Deactivate(uint16_t MPU9250_CS_PIN)
 {
 	HAL_GPIO_WritePin(MPU9250_CS_GPIO, MPU9250_CS_PIN, GPIO_PIN_SET);
 }
 
+
+/* SPI  transmit & receive */
 uint8_t SPIx_WriteRead(uint8_t Byte)
 {
 	uint8_t receivedbyte = 0;
@@ -34,6 +39,8 @@ uint8_t SPIx_WriteRead(uint8_t Byte)
 	return receivedbyte;
 }
 
+
+/* SPI  write */
 void MPU_SPI_Write (uint8_t *pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite, uint16_t MPU9250_CS_PIN)
 {
 	MPU9250_Activate(MPU9250_CS_PIN);
@@ -47,6 +54,8 @@ void MPU_SPI_Write (uint8_t *pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite
 	MPU9250_Deactivate(MPU9250_CS_PIN);
 }
 
+
+/* SPI  read */
 void MPU_SPI_Read(uint8_t *pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead, uint16_t MPU9250_CS_PIN)
 {
 	MPU9250_Activate(MPU9250_CS_PIN);
@@ -56,19 +65,22 @@ void MPU_SPI_Read(uint8_t *pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead, ui
 	MPU9250_Deactivate(MPU9250_CS_PIN);
 }
 
-/* writes a byte to MPU9250 register given a register address and data */
+
+/* SPI write a byte to MPU9250 register given a register address and data */
 void writeRegister(uint8_t subAddress, uint8_t data, uint16_t MPU9250_CS_PIN)
 {
 	MPU_SPI_Write(&data, subAddress, 1, MPU9250_CS_PIN);
 	HAL_Delay(10);
 }
 
-/* reads registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */
+
+/* SPI read registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */
 void readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest, uint16_t MPU9250_CS_PIN){
 	MPU_SPI_Read(dest, subAddress, count, MPU9250_CS_PIN);
 }
 
-/* writes a register to the AK8963 given a register address and data */
+
+/* I2C write a register to the AK8963 given a register address and data */
 void writeAK8963Register(uint8_t subAddress, uint8_t data, uint16_t MPU9250_CS_PIN)
 {
 	// set slave 0 to the AK8963 and set for write
@@ -84,7 +96,8 @@ void writeAK8963Register(uint8_t subAddress, uint8_t data, uint16_t MPU9250_CS_P
 	writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | (uint8_t)1, MPU9250_CS_PIN);
 }
 
-/* reads registers from the AK8963 */
+
+/* I2C read registers from the AK8963 */
 void readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest, uint16_t MPU9250_CS_PIN)
 {
 	// set slave 0 to the AK8963 and set for read
@@ -103,7 +116,8 @@ void readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest, uint1
 	readRegisters(EXT_SENS_DATA_00, count, dest, MPU9250_CS_PIN);
 }
 
-/* gets the MPU9250 WHO_AM_I register value, expected to be 0x71 */
+
+/* Get the MPU9250 WHO_AM_I register value, expected to be 0x71 */
 uint8_t whoAmI(uint16_t MPU9250_CS_PIN){
 	// read the WHO AM I register
 	readRegisters(WHO_AM_I, 1, _buffer, MPU9250_CS_PIN);
@@ -112,7 +126,8 @@ uint8_t whoAmI(uint16_t MPU9250_CS_PIN){
 	return _buffer[0];
 }
 
-/* gets the AK8963 WHO_AM_I register value, expected to be 0x48 */
+
+/* Get the AK8963 WHO_AM_I register value, expected to be 0x48 */
 int whoAmIAK8963(uint16_t MPU9250_CS_PIN){
 	// read the WHO AM I register
 	readAK8963Registers(AK8963_WHO_AM_I, 1, _buffer, MPU9250_CS_PIN);
@@ -120,26 +135,33 @@ int whoAmIAK8963(uint16_t MPU9250_CS_PIN){
 	return _buffer[0];
 }
 
-/* starts communication with the MPU-9250 */
+
+/* Initialize communication with the MPU-9250 */
 uint8_t MPU9250_Init(uint16_t MPU9250_CS_PIN)
 {
+	// activate chip select
 	MPU9250_Activate(MPU9250_CS_PIN);
 
 	// select clock source to gyro
 	writeRegister(PWR_MGMNT_1, CLOCK_SEL_PLL, MPU9250_CS_PIN);
+
 	// enable I2C master mode
 	writeRegister(USER_CTRL, I2C_MST_EN, MPU9250_CS_PIN);
+
 	// set the I2C bus speed to 400 kHz
 	writeRegister(I2C_MST_CTRL, I2C_MST_CLK, MPU9250_CS_PIN);
 
 	// set AK8963 to Power Down
 	writeAK8963Register(AK8963_CNTL1, AK8963_PWR_DOWN, MPU9250_CS_PIN);
+
 	// reset the MPU9250
 	writeRegister(PWR_MGMNT_1, PWR_RESET, MPU9250_CS_PIN);
+
 	// wait for MPU-9250 to come back up
 	HAL_Delay(10);
 	// reset the AK8963
 	writeAK8963Register(AK8963_CNTL2, AK8963_RESET, MPU9250_CS_PIN);
+
 	// select clock source to gyro
 	writeRegister(PWR_MGMNT_1, CLOCK_SEL_PLL, MPU9250_CS_PIN);
 
@@ -213,38 +235,39 @@ uint8_t MPU9250_Init(uint16_t MPU9250_CS_PIN)
 	// instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
 	readAK8963Registers(AK8963_HXL,7,_buffer, MPU9250_CS_PIN);
 
-	// successful init, return 0
-
+	// deactivate chip select
 	MPU9250_Deactivate(MPU9250_CS_PIN);
+
+	// successful init, return 0
 	return 0;
 }
 
 
-/* sets the accelerometer full scale range to values other than default */
+/* Set the accelerometer full scale range to values other than default */
 void MPU9250_SetAccelRange(AccelRange range, uint16_t MPU9250_CS_PIN)
 {
 	writeRegister(ACCEL_CONFIG, range, MPU9250_CS_PIN);
-
 }
 
 
-/* sets the gyro full scale range to values other than default */
+/* Set the gyro full scale range to values other than default */
 void MPU9250_SetGyroRange(GyroRange range, uint16_t MPU9250_CS_PIN)
 {
 	writeRegister(GYRO_CONFIG, range, MPU9250_CS_PIN);
-
-
 }
 
-/* sets the DLPF bandwidth to values other than default */
+
+/* Set the DLPF bandwidth to values other than default */
 void MPU9250_SetDLPFBandwidth(DLPFBandwidth bandwidth, uint16_t MPU9250_CS_PIN)
 {
 	writeRegister(ACCEL_CONFIG2, bandwidth, MPU9250_CS_PIN);
 	writeRegister(CONFIG, bandwidth, MPU9250_CS_PIN);
 }
 
-/* sets the sample rate divider to values other than default */
+
+/* Set the sample rate divider to values other than default */
 void MPU9250_SetSampleRateDivider(SampleRateDivider srd, uint16_t MPU9250_CS_PIN){
+
 	/* setting the sample rate divider to 19 to facilitate setting up magnetometer */
 	writeRegister(SMPDIV, 19, MPU9250_CS_PIN);
 
@@ -288,9 +311,10 @@ void MPU9250_SetSampleRateDivider(SampleRateDivider srd, uint16_t MPU9250_CS_PIN
 
 
 
-/* read the data, each argument should point to a array for x, y, and x */
+/* Read the raw data from accelerometer, gyroscope and magnetometer */
 void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[], uint16_t MPU9250_CS_PIN)
 {
+	// activate chip select
 	MPU9250_Activate(MPU9250_CS_PIN);
 
 	// grab the data from the MPU9250
@@ -315,9 +339,8 @@ void MPU9250_GetData(int16_t AccData[], int16_t GyroData[], int16_t MagData[], u
 	MagData[1] = ((int16_t)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
 	MagData[2] = ((int16_t)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
 
-
+	// deactivate chip select
 	MPU9250_Deactivate(MPU9250_CS_PIN);
-
 }
 
 
